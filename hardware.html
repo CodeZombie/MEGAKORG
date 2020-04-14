@@ -1,0 +1,56 @@
+<html>
+    <head>
+        <style>
+            table, td {
+                border-style: solid;
+                border-width: 1px;
+                border-color: black;
+            }
+        </style>
+        <script>
+            function turnBank(){
+                var value = prompt('Enter a value (0-22):', '4');
+                if(value == null) { return; }
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4) {
+                        console.log('Request returned with code ' + this.status)
+                        document.getElementById('bankKnob').innerText = 'EDIT SELECT ' + '(' + this.response + ')';
+                    }
+                };
+                xhttp.open('GET', '/turnBank?value=' + value, true);
+                xhttp.send();
+            }
+            function turnKnob(knobIndex){
+                var value = prompt('Enter a value (0-255):', '64');
+                if(value == null) { return; }
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4) {
+                        console.log('Request returned with code ' + this.status)
+                        document.getElementById('knobButton_' + knobIndex).innerText = 'KNOB ' + knobIndex + '(' + this.response + ')';
+                    }
+                };
+                xhttp.open('GET', '/turnKnob?knob=' + knobIndex + '&value=' + value, true);
+                xhttp.send();
+            }
+        </script>
+    </head>
+    <body>
+        <table>
+            <tbody>
+            <tr>
+            <td></td>
+            <td><a id='knobButton_0' href='javascript:turnKnob(0);'>KNOB 0 (0)</a></td>
+            <td><a id='knobButton_1' href='javascript:turnKnob(1);'>KNOB 1 (0)</a></td>
+            <td><a id='knobButton_2' href='javascript:turnKnob(2);'>KNOB 2 (0)</a></td>
+            <td><a id='knobButton_3' href='javascript:turnKnob(3);'>KNOB 3 (0)</a></td>
+            <td><a id='knobButton_4' href='javascript:turnKnob(4);'>KNOB 4 (0)</a></td>
+            </tr>
+            <tr>
+            <td><a id='bankKnob' href='javascript:turnBank();'>EDIT SELECT (0)</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </body>
+</html>

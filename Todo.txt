@@ -1,0 +1,80 @@
+Hardware sequence system:
+    Telling the hardware controller to do any change will place a Sequence object in a queue that will be completed
+    asynchronously. 
+    This is to ensure there is a sufficient delay between every hardware action.
+
+    For example, telling the hw controller to SelectBank(5), TurnKnob(0, 255), turnKnob(0, 128), turnKnob(1, 0);
+    will insert three Sequences into a queue.
+    -> The first, will turn the bankKnob to position 5
+        In this case, bankknob was alreay in position 5, so it must turn to 0 then to five. It does this wil SeqSteps:
+        -> Insert a SequenceStep that turns bankKnob to position 0;
+        -> Wait 32ms
+        -> Insert another sequenceStep that turns bank knob to position 5;
+    -> Sequence is finished, so the queue will wait for 32 ms
+    -> then it will turn knob 0 to 255,
+    -> The queue will wait 32 ms
+    -> then it will turn knob 0 to 128.
+    The sequencer will know that it has been at least 32ms since knob 1 was turned last already or since the bank knob was turned,
+    so it will not wait 32 ms, it'll just do it:
+    -> turn knob 1 to 0.
+
+
+From interface.cpp:
+//Set Parameter TRANSPOSE to 64:
+hardwareController->addEvent(SELECT_BANK, 0);
+hardwareController->addEvent(TURN_KNOB, 0, 64);
+
+
+SEQUENCE STACK NOW LOOKS LIKE:
+
+0: [SELECT_BANK, 0]
+1: [TURN_KNOB, 0, 64]
+
+this->waitTime
+
+HardwareController::sequenceStep() {
+    //attempts to run the item at the top of the sequence list:
+
+    //if it has not yet been an entire wait cycle...
+    if(this->startedWaitingTime + this->waitTime > time.now() {
+        return;
+    }
+    while(true) {
+        if(this->event[0] != null) {
+            if(this->event[0].type == SELECT_BANK) {
+                if(this->selectBank(this->event[0].arg) == 1){
+                    this->startedWaitingTime = time.now();
+                    this->waitTime = 32;
+                    break;
+                }else{
+                    continue;
+                }
+            }
+        }else{
+            break;
+        }
+    }
+}
+
+char HardwareController::selectBank(char bank){
+    if(this->selectedBank == bank) {
+        //we're already at this bank. Skip without waiting.
+        return 0;
+    }
+    //if we need to select the a knob whose already at the position we want, we need to add two new items to the seq
+    this->addEventToTop()
+}
+
+
+
+Sequence step:
+    -> returns if it has not been a wait cycle yet, and we're waiting.
+    ->attempts to execute and then remove the topmost event in the list
+    -> if the event returns a full vector, it means it didnt actually do anything to the board,
+       Add the items in the vector to the Sequence list, then go to step 2 without waiting.
+    -> if the event returns an empty vector, it did something to the board. Trigger a 32ms wait and return;
+
+
+Event:
+    ->If this only needs to do one thing to the board, do it and return an empty vector.
+    ->If it needs to do multiple things, add the new events to an ARRAY which you will return.
