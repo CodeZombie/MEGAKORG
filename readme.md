@@ -1,6 +1,8 @@
 
 # MEGAKORG
 
+![Image of Megakorg hardware as of April, 2020](https://i.imgur.com/QwrQvmB.jpg)
+
 ## WHAT IS THIS?
 The software and hardware specifics for a programmable system that can control the Korg Microkorg synthesizer.
 
