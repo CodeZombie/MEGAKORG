@@ -1,6 +1,6 @@
 #ifndef HardwareController_h
 #define HardwareController_h
-#include <Arduino.h> 
+#include "Sequence.h"
 #include "SPI.h"
 
 typedef enum editSelectBank { 
@@ -19,12 +19,18 @@ typedef enum knob {
 class HardwareController {
     public:
         HardwareController(char mux_select_0, char mux_select_1, char mux_select_2, char mux_enable);
+        unsigned char addEvent(SequenceEvent sequenceEvent);    
+        
         void setKnobValue(char knobIndex, char value);
         void selectEditSelectBank(char editSelectBank);
         char getSelectedEditSelectBank();
         char getKnobValue(char knobIndex);
         void pressButton(char buttonIndex);
         void releaseButton(char buttonIndex);
+        void update();
+        
+        /* Event Sequencer */
+        Sequence *sequence;
 
     private:
         /* Multiplexer */

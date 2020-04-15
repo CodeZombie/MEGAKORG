@@ -10,13 +10,69 @@ HardwareController::HardwareController(char mux_select_0, char mux_select_1, cha
     this->mux_select[1] = mux_select_1;
     this->mux_select[2] = mux_select_2;
     this->mux_enable    = mux_enable;
+    
+    this->disableMultiplexer();
+    this->sequence = new Sequence();
 
-    /*
-    for(char i = 0; i < 5; i++){
-        this->setKnobValue(i, 0);
-    }*/
-    //this->disableMultiplexer();
+    for(int i = 0; i < 5; i++) {
+        this->knobValue[i] = 0;
+    }
+    for(int i = 0; i < 2; i++) {
+        this->editSelectBankPosition[i] = 0;
+    }
 }
+
+unsigned char HardwareController::addEvent(SequenceEvent sequenceEvent) {
+    return this->sequence->addEventToBottom(sequenceEvent);
+}
+
+void HardwareController::update() {
+    if(this->sequence->isEmpty()){
+        return;
+    }
+
+    unsigned char returnValue = 0; //0 == continue. 1 == stop.
+    SequenceEvent activeEvent;
+    //Grabs the event at the top, removing it from the list.
+    //Executes this event, which may place new events in the list.
+    //if new events were placed in this stack without rate-limited action, the event is deleted and the process repeated.
+    //if no new events are added, just delete the event and end.
+
+    while(returnValue == 0) {
+        activeEvent = this->sequence->getAndRemoveFromTop();
+        
+        switch(activeEvent.type) {
+            case SELECT_BANK:
+                Serial.print("EVENT: SELECT BANK: " + String(activeEvent.arg0) + "\n");
+                if(this->sequence->addEventToPosition(SequenceEvent{TURN_BANK_KNOB, 0, 0}, 0) == 0){
+                    Serial.print("Failed to Add Event To Position: Sequence List Full\n");
+                }
+                if(this->sequence->addEventToPosition(SequenceEvent{TURN_BANK_KNOB, 0, activeEvent.arg0}, 1) == 0){
+                    Serial.print("Failed to Add Event To Position: Sequence List Full\n");
+                }
+                returnValue = 0; //continue
+                //returnValue = this->selectEditSelectBank(activeEvent->arg0);
+                break;
+            case TURN_BANK_KNOB:
+                Serial.print("EVENT: TURNING BANK KNOB: " + String(activeEvent.arg0) + " TO: " + String(activeEvent.arg1)  + "\n");
+                returnValue = 1; //break
+                break;
+            case TURN_KNOB:
+                Serial.print("EVENT: SET KNOB : " + String(activeEvent.arg0) + " TO VALUE: " + String(activeEvent.arg1)  + "\n");
+                //returnValue = this->setKnobValue(activeEvent->arg0, activeEvent->arg1);
+                returnValue = 1;
+                break;
+            default:
+                Serial.print("EVENT: ?????? - Unknown event type! \n");
+                return;
+                break;
+        }
+    }
+}
+
+/*********************************************************************************
+ * PRIVATE MEMBERS:
+ *********************************************************************************/
 
 void HardwareController::setKnobValue(char knobIndex, char value) {
     this->setMultiplexer(4 - knobIndex);                    //Select the right digipot
@@ -32,6 +88,10 @@ char HardwareController::getKnobValue(char knobIndex){
     return this->knobValue[knobIndex];
 }
 
+
+//* TODO: Make asynchronous
+//  Will create a Sequence object that is added to the list of Sequences.
+//  This sequence will contain at least two actions which will turn knobs.
 void HardwareController::selectEditSelectBank(char editSelectBank){
     if(this->getSelectedEditSelectBank() == editSelectBank) {
         Serial.println("Edit Select Knob already selected. Cancelling.");
