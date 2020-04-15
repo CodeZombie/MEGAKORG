@@ -20,6 +20,8 @@ HardwareController::HardwareController(char mux_select_0, char mux_select_1, cha
     for(int i = 0; i < 2; i++) {
         this->editSelectBankPosition[i] = 0;
     }
+
+    this->lastEventTime = millis();
 }
 
 unsigned char HardwareController::addEvent(SequenceEvent sequenceEvent) {
@@ -27,6 +29,10 @@ unsigned char HardwareController::addEvent(SequenceEvent sequenceEvent) {
 }
 
 void HardwareController::update() {
+    if(millis() - this->lastEventTime  < this->eventInterval){
+        return;
+    }
+    
     if(this->sequence->isEmpty()){
         return;
     }
@@ -68,6 +74,8 @@ void HardwareController::update() {
                 break;
         }
     }
+
+    this->lastEventTime = millis();
 }
 
 /*********************************************************************************

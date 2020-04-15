@@ -33,6 +33,10 @@ class HardwareController {
         Sequence *sequence;
 
     private:
+        /* Sequencer */
+        const uint32_t eventInterval = 3000;
+        uint32_t lastEventTime;
+
         /* Multiplexer */
         void setMultiplexer(char chipIndex);
         void disableMultiplexer();
