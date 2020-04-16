@@ -12,52 +12,52 @@ HardwareController::HardwareController(char mux_select_0, char mux_select_1, cha
     this->mux_enable    = mux_enable;
     
     this->disableMultiplexer();
-    this->sequence = new Sequence();
+    this->eventSequence = new Sequence<HardwareEvent>();
 
     for(int i = 0; i < 5; i++) {
         this->knobValue[i] = 0;
     }
     for(int i = 0; i < 2; i++) {
-        this->editSelectBankPosition[i] = 0;
+        this->bankKnobPosition[i] = 0;
     }
 
     this->lastEventTime = millis();
 }
 
-unsigned char HardwareController::addEvent(SequenceEvent sequenceEvent) {
-    return this->sequence->addEventToBottom(sequenceEvent);
+unsigned char HardwareController::addEvent(HardwareEvent hardwareEvent) {
+    return this->eventSequence->addToEnd(hardwareEvent);
 }
 
 void HardwareController::update() {
+    if(this->eventSequence->getElementCount() == 0){
+        return;
+    }
+
     if(millis() - this->lastEventTime  < this->eventInterval){
         return;
     }
     
-    if(this->sequence->isEmpty()){
-        return;
-    }
-
     unsigned char returnValue = 0; //0 == continue. 1 == stop.
-    SequenceEvent activeEvent;
+    HardwareEvent activeEvent;
     //Grabs the event at the top, removing it from the list.
     //Executes this event, which may place new events in the list.
     //if new events were placed in this stack without rate-limited action, the event is deleted and the process repeated.
     //if no new events are added, just delete the event and end.
 
     while(returnValue == 0) {
-        activeEvent = this->sequence->getAndRemoveFromTop();
+        activeEvent = this->eventSequence->getAndRemoveFromBeginning();
         
         switch(activeEvent.type) {
             case SELECT_BANK:
                 Serial.print("EVENT: SELECT BANK: " + String(activeEvent.arg0) + "\n");
-                if(this->sequence->addEventToPosition(SequenceEvent{TURN_BANK_KNOB, 0, 0}, 0) == 0){
+                if(this->eventSequence->addToPosition(HardwareEvent{TURN_BANK_KNOB, 0, 0}, 0) == 0){
                     Serial.print("Failed to Add Event To Position: Sequence List Full\n");
                 }
-                if(this->sequence->addEventToPosition(SequenceEvent{TURN_BANK_KNOB, 0, activeEvent.arg0}, 1) == 0){
+                if(this->eventSequence->addToPosition(HardwareEvent{TURN_BANK_KNOB, 0, activeEvent.arg0}, 1) == 0){
                     Serial.print("Failed to Add Event To Position: Sequence List Full\n");
                 }
                 returnValue = 0; //continue
-                //returnValue = this->selectEditSelectBank(activeEvent->arg0);
+                //returnValue = this->selectBank(activeEvent->arg0);
                 break;
             case TURN_BANK_KNOB:
                 Serial.print("EVENT: TURNING BANK KNOB: " + String(activeEvent.arg0) + " TO: " + String(activeEvent.arg1)  + "\n");
@@ -70,7 +70,7 @@ void HardwareController::update() {
                 break;
             default:
                 Serial.print("EVENT: ?????? - Unknown event type! \n");
-                return;
+                returnValue = 1;
                 break;
         }
     }
@@ -83,10 +83,10 @@ void HardwareController::update() {
  *********************************************************************************/
 
 void HardwareController::setKnobValue(char knobIndex, char value) {
-    this->setMultiplexer(4 - knobIndex);                    //Select the right digipot
+    this->selectChip(4 - knobIndex);                    //Select the right digipot
     SPI.transfer(B00010001);                                //tell the digipot that we're sending it data...
     SPI.transfer(255 - value);                              //and send it the data.
-    this->setMultiplexer(4 - knobIndex);                    //cycle the multiplexer, which will set the digipots 
+    this->selectChip(4 - knobIndex);                    //cycle the multiplexer, which will set the digipots 
                                                               //CS from HIGH back to LOW, shifting the data in.
     this->disableMultiplexer();                             // !!!! Disable the mux (Might be unecessary????)
     this->knobValue[knobIndex] = value;
@@ -100,45 +100,45 @@ char HardwareController::getKnobValue(char knobIndex){
 //* TODO: Make asynchronous
 //  Will create a Sequence object that is added to the list of Sequences.
 //  This sequence will contain at least two actions which will turn knobs.
-void HardwareController::selectEditSelectBank(char editSelectBank){
-    if(this->getSelectedEditSelectBank() == editSelectBank) {
-        Serial.println("Edit Select Knob already selected. Cancelling.");
+void HardwareController::selectBank(char bank){
+    if(this->getSelectedBank() == bank) {
+        Serial.println("Bank Knob already selected. Cancelling.");
         return;
     }
 
-    Serial.println("SelectEditSelectBank( " + String((int)editSelectBank) + " );");
+    Serial.println("selectBank( " + String((int)bank) + " );");
 
     //Determine which knob will need to be turned:
-    char editSelectBankKnobToBeTurned;
+    char bankKnobToBeTurned;
     char relativeBankPosition;
 
-    if(editSelectBank < 11){
-        editSelectBankKnobToBeTurned = EditSelectBank_1; //upper
-        relativeBankPosition = editSelectBank;
+    if(bank < 11){
+        bankKnobToBeTurned = BANKKNOB_0; //upper
+        relativeBankPosition = bank;
     }else{
-        editSelectBankKnobToBeTurned = EditSelectBank_2;
-        relativeBankPosition = editSelectBank - 11;
+        bankKnobToBeTurned = BANKKNOB_1;
+        relativeBankPosition = bank - 11;
     }
 
     //if the knob is already in the position...
-    if(this->editSelectBankPosition[editSelectBankKnobToBeTurned] == relativeBankPosition) {
+    if(this->bankKnobPosition[bankKnobToBeTurned] == relativeBankPosition) {
         if(relativeBankPosition == 0){
-            this->setEditSelectBankPosition(editSelectBankKnobToBeTurned, 1);
+            this->setBankKnobPosition(bankKnobToBeTurned, 1);
             delay(32);
         }else{
-            this->setEditSelectBankPosition(editSelectBankKnobToBeTurned, 0);
+            this->setBankKnobPosition(bankKnobToBeTurned, 0);
             delay(32);
         }
     }
-    this->setEditSelectBankPosition(editSelectBankKnobToBeTurned, relativeBankPosition);
-    this->lastTurnedEditSelectBankKnob = editSelectBankKnobToBeTurned;
+    this->setBankKnobPosition(bankKnobToBeTurned, relativeBankPosition);
+    this->lastTurnedBankKnob = bankKnobToBeTurned;
 }
 
-char HardwareController::getSelectedEditSelectBank() {
-    if(this->lastTurnedEditSelectBankKnob == EditSelectBank_1){
-        return this->editSelectBankPosition[EditSelectBank_1];
+char HardwareController::getSelectedBank() {
+    if(this->lastTurnedBankKnob == BANKKNOB_0){
+        return this->bankKnobPosition[BANKKNOB_0];
     }else{
-        return this->editSelectBankPosition[EditSelectBank_2] + 11;
+        return this->bankKnobPosition[BANKKNOB_1] + 11;
     }
 }
 
@@ -153,7 +153,7 @@ void HardwareController::releaseButton(char buttonIndex) {
 
 /* MULTIPLEXER */
 
-void HardwareController::setMultiplexer(char chipIndex) {
+void HardwareController::selectChip(char chipIndex) {
     Serial.print("Setting multiplexer to value: " + String((int)chipIndex));
     Serial.print(" [");
     Serial.print("Pin " + String((int)this->mux_select[0]) + " = " + String((int) (1 & ((chipIndex) >> 0))));
@@ -191,14 +191,14 @@ void HardwareController::sendByteToShiftRegister(char value) {
         Serial.print((int)(1 & ((value) >> 0)));
         Serial.print("]\n");
         
-    this->setMultiplexer(5); //select the bank controller shift register.
+    this->selectChip(5); //select the bank controller shift register.
     SPI.transfer(value);
     this->disableMultiplexer(); //commit the values by disabling the mux.
 }
 
-void HardwareController::setEditSelectBankPosition(char editSelectKnobIndex, char relativePosition) {
-    Serial.println("setEditSelectBankPosition( " + String((int)editSelectKnobIndex) + ", " + String((int)relativePosition) + " );");
+void HardwareController::setBankKnobPosition(char bankKnobIndex, char relativePosition) {
+    Serial.println("setBankKnobPosition( " + String((int)bankKnobIndex) + ", " + String((int)relativePosition) + " );");
     
-    this->editSelectBankPosition[editSelectKnobIndex] = relativePosition;
-    this->sendByteToShiftRegister(((this->editSelectBankPosition[0] << 4) | this->editSelectBankPosition[1]));
+    this->bankKnobPosition[bankKnobIndex] = relativePosition;
+    this->sendByteToShiftRegister(((this->bankKnobPosition[0] << 4) | this->bankKnobPosition[1]));
 }

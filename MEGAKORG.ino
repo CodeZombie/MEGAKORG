@@ -1,15 +1,14 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <Arduino.h> 
+#include "HardwareEvent.h"
 #include "HardwareController.h"
 #include "SPI.h"
 #include "webpages.h"
-#include "Sequence.h"
 
 
 ESP8266WebServer server(80);
 HardwareController *hardwareController;
-SequenceEvent *sequence;
 
 void setup() {
   Serial.begin(115200);
@@ -42,15 +41,14 @@ void turnKnob() {
   String knob = server.arg("knob");
   String value = server.arg("value");
   
-  hardwareController->addEvent({TURN_KNOB, knob.toInt(), value.toInt()});
+  hardwareController->addEvent(HardwareEvent{TURN_KNOB, knob.toInt(), value.toInt()});
   //hardwareController->setKnobValue(knob.toInt(), value.toInt());
   server.send(200, "text/plain", String((int)hardwareController->getKnobValue(knob.toInt())));
 }
 
 void selectBank() {
   String value = server.arg("value");
-  Serial.println("Attempting to select bank: " + value);
-  hardwareController->addEvent({SELECT_BANK, value.toInt()});
+  hardwareController->addEvent(HardwareEvent{SELECT_BANK, value.toInt()});
   //hardwareController->selectEditSelectBank(value.toInt());
   server.send(200, "text/plain", "Suck me off");
   //server.send(200, "text/plain", String((int)hardwareController->getSelectedEditSelectBank()));
