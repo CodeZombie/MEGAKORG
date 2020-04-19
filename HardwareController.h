@@ -1,6 +1,6 @@
 #ifndef HardwareController_h
 #define HardwareController_h
-#include "Sequence.h"
+#include "Deque.h"
 #include "HardwareEvent.h"
 #include "SPI.h"
 
@@ -31,7 +31,7 @@ class HardwareController {
         /* Sequencer */
         const uint32_t eventInterval = 1000;
         uint32_t lastEventTime;
-        Sequence<HardwareEvent> *eventSequence;
+        Deque<HardwareEvent> *eventDeque;
 
         /* Multiplexer */
         void selectChip(char chipIndex);
@@ -45,7 +45,7 @@ class HardwareController {
 
         /* Edit Select Banks */
         void selectBank(char bank); //rename selectBank
-        void setBankKnobPosition(char bankKnobIndex, char relativePosition);
+        void turnBankKnob(char bankKnobIndex, char relativePosition);
         char bankKnobPosition[2];
         char lastTurnedBankKnob;
 
