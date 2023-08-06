@@ -1,7 +1,7 @@
 #ifndef Deque_H
 #define Deque_H
 
-#define DEQUE_MAX_ELEMENTS 32
+#define DEQUE_MAX_ELEMENTS 5120
 
 template <typename T> class Deque {
     public:

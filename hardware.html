@@ -21,6 +21,16 @@
                 xhttp.open('GET', '/turnBank?value=' + value, true);
                 xhttp.send();
             }
+            function sweepKnob(knobIndex) {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4) {
+                        console.log('Request returned with code ' + this.status)
+                    }
+                };
+                xhttp.open('GET', '/sweep?knob=' + knobIndex + '&value=' + value, true);
+                xhttp.send();
+            }
             function turnKnob(knobIndex){
                 var value = prompt('Enter a value (0-255):', '64');
                 if(value == null) { return; }

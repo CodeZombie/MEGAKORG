@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .section-box {
+        width:50%;
+        float:left;
+        border: 1px solid black;
+        border-radius: 16px;
+    }
+    .section-box h1 {
+        display:block;
+        width:100%;
+        float:left;
+        text-align: center;
+    }
+
+    .slider-container {
+        width:100%;
+      display: flex;
+      
+    }
+    .slider {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px;
+
+    }
+
+    .slider .slider-input {
+      height: 200px;
+      width: 20px;
+      background-color: #f1f1f1;
+      border-radius: 5px;
+      -webkit-appearance: slider-vertical; /* For Chrome */
+      appearance: slider-vertical;
+      margin-top: 10px;
+    }
+
+    .slider .slider-label {
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+    <div class="section-box">
+        <h1>Voice</h1>
+        <div class="slider-container">
+            <div class="slider">
+              <input type="range" min="0" max="255" value="128" class="slider-input" />
+              <label class="slider-label">Slider 1</label>
+            </div>
+            <div class="slider">
+              <input type="range" min="0" max="255" value="128" class="slider-input" />
+              <label class="slider-label">Slider 2</label>
+            </div>
+            <div class="slider">
+              <input type="range" min="0" max="255" value="128" class="slider-input" />
+              <label class="slider-label">Slider 3</label>
+            </div>
+            <div class="slider">
+              <input type="range" min="0" max="255" value="128" class="slider-input" />
+              <label class="slider-label">Slider 4</label>
+            </div>
+            <div class="slider">
+              <input type="range" min="0" max="255" value="128" class="slider-input" />
+              <label class="slider-label">Slider 5</label>
+            </div>
+          </div>
+    </div>
+
+
+  <div class="slider-container">
+    <div class="slider">
+      <input type="range" min="0" max="255" value="128" class="slider-input" />
+      <label class="slider-label">Slider 1</label>
+    </div>
+    <div class="slider">
+      <input type="range" min="0" max="255" value="128" class="slider-input" />
+      <label class="slider-label">Slider 2</label>
+    </div>
+    <div class="slider">
+      <input type="range" min="0" max="255" value="128" class="slider-input" />
+      <label class="slider-label">Slider 3</label>
+    </div>
+    <div class="slider">
+      <input type="range" min="0" max="255" value="128" class="slider-input" />
+      <label class="slider-label">Slider 4</label>
+    </div>
+    <div class="slider">
+      <input type="range" min="0" max="255" value="128" class="slider-input" />
+      <label class="slider-label">Slider 5</label>
+    </div>
+  </div>
+
+  
+
+  <script>
+    var banks = {
+        "voice": ["Synth/Vocoder", "Single/Layer", "Voice Assign", "Trigger Mode", "Unison Detune"],
+        "pitch": ["transpose", "tune", "portamento", "bend range", "vibrato int"],
+        "osc 1": ["wave", "control 1", "control 2"],
+        "osc 2": ["wave", "osc mod", "semitone", "tune"],
+        "mixer": ["osc 1 level", "osc 2 level", "noise level"],
+        "filter": ["type", "cutoff", "resonance", "filter eg int", "filter key track"],
+        "filter eg": ["attack", "decay", "sustain", "release", "eg reset"],
+        "amp": ["level", "panpot", "distortion", "kbd track"],
+        
+
+    }
+
+    const sliders = document.querySelectorAll('.slider .slider-input');
+    sliders.forEach(slider => {
+      slider.addEventListener('input', () => {
+        const value = slider.value;
+        console.log(value); // You can do something with the value here
+      });
+    });
+  </script>
+</body>
+</html>
